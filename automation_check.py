@@ -378,6 +378,16 @@ async def check_order(orders, shipping_orders, store_api):
             ]
             is_all_complete = False
             order_cnt = len(filtered_orders)
+
+            # ⚠️ Google Sheets에 '배송중' 상태의 주문이 없는 경우 경고
+            if order_cnt == 0:
+                print()
+                print(f"⚠️ [경고] Google Sheets에서 '배송중' 상태의 주문을 찾을 수 없음")
+                print(f"   마켓주문번호: {market_order_num}")
+                print(f"   → API 상태 확인 없이 건너뜀 (배송완료 처리하지 않음)")
+                print()
+                continue
+
             if order_cnt == 1:
                 complete_cnt = 0
                 store_order_num = filtered_orders.iloc[0]['스토어주문번호']
@@ -431,9 +441,10 @@ async def check_order(orders, shipping_orders, store_api):
                         print(f"{store_order_num} - {market_order_sheet_num}", response.get("status"))
                         print()
 
-            if complete_cnt == order_cnt:
+            # 🔒 버그 수정: order_cnt가 0인 경우 배송완료 처리 방지
+            if order_cnt > 0 and complete_cnt == order_cnt:
                 is_all_complete = True
-            
+
             if is_all_complete:
                 processed_orders.append(order)
                 
